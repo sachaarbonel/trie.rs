@@ -41,7 +41,12 @@ where
             None
         }
     }
+    fn contains_where(&self, test: Callback<K>) -> bool {
+        self.children.keys().any(|&key| test(key))
+    }
 }
+
+type Callback<K> = fn(key: K) -> bool;
 
 fn main() {
     let mut trie = TrieNode::new();
@@ -71,5 +76,12 @@ mod tests {
                 children: std::collections::HashMap::new()
             })
         );
+    }
+
+    #[test]
+    fn trie_contains_where_test() {
+        let mut trie = TrieNode::new();
+        trie.insert("users/:id", ["whatever"]);
+        assert_eq!(trie.contains_where(|x| x.contains(":")), true);
     }
 }
