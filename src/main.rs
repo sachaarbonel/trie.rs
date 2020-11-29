@@ -1,3 +1,5 @@
+#![feature(iter_map_while)]
+
 #[derive(Debug, PartialEq, Clone)]
 pub struct TrieNode<K, V>
 where
@@ -44,6 +46,13 @@ where
     fn contains_where(&self, test: Callback<K>) -> bool {
         self.children.keys().any(|&key| test(key))
     }
+    fn get_where(&self, test: Callback<K>) -> Option<TrieNode<K, V>> {
+        let iter = self.children.keys().find(|&&key| test(key));
+        match iter {
+            Some(result) => self.get(*result),
+            _ => None,
+        }
+    }
 }
 
 type Callback<K> = fn(key: K) -> bool;
@@ -83,5 +92,18 @@ mod tests {
         let mut trie = TrieNode::new();
         trie.insert("users/:id", ["whatever"]);
         assert_eq!(trie.contains_where(|x| x.contains(":")), true);
+    }
+
+    #[test]
+    fn trie_get_where_test() {
+        let mut trie = TrieNode::new();
+        trie.insert("users/:id", ["whatever"]);
+        assert_eq!(
+            trie.get_where(|x| x.contains(":")),
+            Some(TrieNode {
+                value: Some(["whatever"]),
+                children: std::collections::HashMap::new()
+            })
+        );
     }
 }
