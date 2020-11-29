@@ -1,4 +1,4 @@
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct TrieNode<K, V>
 where
     K: Eq + std::hash::Hash + Clone,
@@ -10,7 +10,7 @@ where
 
 impl<K, V> TrieNode<K, V>
 where
-    K: std::cmp::Eq + std::hash::Hash + Clone,
+    K: std::cmp::Eq + std::hash::Hash + Clone + Copy,
     V: Clone,
 {
     fn new() -> TrieNode<K, V> {
@@ -33,12 +33,20 @@ where
     fn contains(&self, key: K) -> bool {
         self.children.contains_key(&key)
     }
+
+    fn get(&self, key: K) -> Option<TrieNode<K, V>> {
+        if self.contains(key) {
+            Some(self.children[&key].clone())
+        } else {
+            None
+        }
+    }
 }
 
 fn main() {
     let mut trie = TrieNode::new();
     trie.insert("hey", ["it works"]);
-    println!("{:#?}", trie);
+    println!("{:#?}", trie.get("hey"));
 }
 
 #[cfg(test)]
@@ -51,5 +59,17 @@ mod tests {
         trie.insert("hey", ["it works"]);
 
         assert_eq!(trie.contains("hey"), true);
+    }
+    #[test]
+    fn trie_get_test() {
+        let mut trie = TrieNode::new();
+        trie.insert("hey", ["it works"]);
+        assert_eq!(
+            trie.get("hey"),
+            Some(TrieNode {
+                value: Some(["it works"]),
+                children: std::collections::HashMap::new()
+            })
+        );
     }
 }
