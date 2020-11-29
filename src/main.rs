@@ -1,4 +1,4 @@
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct TrieNode<K, V>
 where
     K: Eq + std::hash::Hash + Clone,
@@ -29,10 +29,27 @@ where
             },
         )
     }
+
+    fn contains(&self, key: K) -> bool {
+        self.children.contains_key(&key)
+    }
 }
 
 fn main() {
     let mut trie = TrieNode::new();
-    trie.insert("hey", ["v: V"]);
+    trie.insert("hey", ["it works"]);
     println!("{:#?}", trie);
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn trie_contains_test() {
+        let mut trie = TrieNode::new();
+        trie.insert("hey", ["it works"]);
+
+        assert_eq!(trie.contains("hey"), true);
+    }
 }
