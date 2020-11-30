@@ -55,8 +55,7 @@ where
     }
 }
 
-
-fn chunk(input: &str) -> bool {
+fn chunk(input: &str, compared: &str) -> bool {
     let chars: Vec<char> = input.chars().collect();
     let slice = chars.as_slice();
     let mut result = Vec::new();
@@ -64,12 +63,12 @@ fn chunk(input: &str) -> bool {
         let s = String::from_iter(&slice[0..i].to_vec());
         result.push(s);
     }
-    result.contains(&String::from(input))
+    result.contains(&String::from(compared))
 }
 fn main() {
     let mut trie = TrieNode::new();
-    trie.add("Paris", "Geo struct".to_owned());
-    let result = trie.get_where(|input| chunk(input));
+    trie.add(["Paris"], "Geo struct".to_owned());
+    let result = trie.get_where(|inputs| inputs.iter().any(|input| chunk(&input, "Paris")));
     println!("{:#?}", result);
 }
 
@@ -90,13 +89,37 @@ mod tests {
         let mut trie = TrieNode::new();
         trie.add("Paris", "Geo struct".to_owned());
         assert_eq!(
-            trie.get_where(|input| chunk(input)),
+            trie.get_where(|input| chunk(input, "Paris")),
             Some(TrieNode {
                 value: Some("Geo struct".to_owned()),
                 children: std::collections::HashMap::new()
             })
         );
     }
+
+    #[test]
+    fn trie_chunk_vec_test() {
+        let mut trie = TrieNode::new();
+        trie.add(
+            ["Paris", "Paris 15", "15ème arrondissement"],
+            "Geo struct".to_owned(),
+        );
+        assert_eq!(
+            trie.get_where(|inputs| inputs.iter().any(|input| chunk(&input, "Par"))),
+            Some(TrieNode {
+                value: Some("Geo struct".to_owned()),
+                children: std::collections::HashMap::new()
+            })
+        );
+        assert_eq!(
+            trie.get_where(|inputs| inputs.iter().any(|input| chunk(&input, "15"))),
+            Some(TrieNode {
+                value: Some("Geo struct".to_owned()),
+                children: std::collections::HashMap::new()
+            })
+        );
+    }
+
     #[test]
     fn trie_get_test() {
         let mut trie = TrieNode::new();
