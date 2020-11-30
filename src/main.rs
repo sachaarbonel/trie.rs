@@ -1,4 +1,4 @@
-#![feature(iter_map_while)]
+use std::iter::FromIterator;
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct TrieNode<K, V>
@@ -22,7 +22,7 @@ where
         }
     }
 
-    fn insert(&mut self, path: K, v: V) -> Option<TrieNode<K, V>> {
+    fn add(&mut self, path: K, v: V) -> Option<TrieNode<K, V>> {
         self.children.insert(
             path,
             TrieNode {
@@ -57,10 +57,21 @@ where
 
 type Callback<K> = fn(key: K) -> bool;
 
+fn chunk(input: &str) -> bool {
+    let chars: Vec<char> = input.chars().collect();
+    let slice = chars.as_slice();
+    let mut result = Vec::new();
+    for i in 1..=slice.len() {
+        let s = String::from_iter(&slice[0..i].to_vec());
+        result.push(s);
+    }
+    result.contains(&String::from(input))
+}
 fn main() {
     let mut trie = TrieNode::new();
-    trie.insert("hey", ["it works"]);
-    println!("{:#?}", trie.get("hey"));
+    trie.add("Paris", "Geo struct".to_owned());
+    let result = trie.get_where(|input| chunk(input));
+    println!("{:#?}", result);
 }
 
 #[cfg(test)]
@@ -70,14 +81,27 @@ mod tests {
     #[test]
     fn trie_contains_test() {
         let mut trie = TrieNode::new();
-        trie.insert("hey", ["it works"]);
+        trie.add("hey", ["it works"]);
 
         assert_eq!(trie.contains("hey"), true);
+    }
+
+    #[test]
+    fn trie_chunk_test() {
+        let mut trie = TrieNode::new();
+        trie.add("Paris", "Geo struct".to_owned());
+        assert_eq!(
+            trie.get_where(|input| chunk(input)),
+            Some(TrieNode {
+                value: Some("Geo struct".to_owned()),
+                children: std::collections::HashMap::new()
+            })
+        );
     }
     #[test]
     fn trie_get_test() {
         let mut trie = TrieNode::new();
-        trie.insert("hey", ["it works"]);
+        trie.add("hey", ["it works"]);
         assert_eq!(
             trie.get("hey"),
             Some(TrieNode {
@@ -90,14 +114,14 @@ mod tests {
     #[test]
     fn trie_contains_where_test() {
         let mut trie = TrieNode::new();
-        trie.insert("users/:id", ["whatever"]);
+        trie.add("users/:id", ["whatever"]);
         assert_eq!(trie.contains_where(|x| x.contains(":")), true);
     }
 
     #[test]
     fn trie_get_where_test() {
         let mut trie = TrieNode::new();
-        trie.insert("users/:id", ["whatever"]);
+        trie.add("users/:id", ["whatever"]);
         assert_eq!(
             trie.get_where(|x| x.contains(":")),
             Some(TrieNode {
