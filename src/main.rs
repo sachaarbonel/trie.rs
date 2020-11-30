@@ -46,12 +46,20 @@ where
     fn contains_where(&self, test: fn(key: K) -> bool) -> bool {
         self.children.keys().any(|&key| test(key))
     }
-    fn get_where(&self, test: fn(key: K) -> bool) -> Option<TrieNode<K, V>> {
-        let iter = self.children.keys().find(|&&key| test(key));
-        match iter {
-            Some(result) => self.get(*result),
-            _ => None,
-        }
+
+    //find every key that match test predica
+    fn get_where(&self, test: fn(key: K) -> bool) -> Vec<TrieNode<K, V>> {
+        let matching_keys = self
+            .children
+            .keys()
+            .filter(|&&key| test(key))
+            .collect::<Vec<&K>>();
+        matching_keys
+            .iter()
+            .map(|&&key| self.get(key))
+            .filter(|x| x.is_some())
+            .map(|x| x.unwrap())
+            .collect()
     }
 }
 
@@ -90,33 +98,47 @@ mod tests {
         trie.add("Paris", "Geo struct".to_owned());
         assert_eq!(
             trie.get_where(|input| chunk(input, "Paris")),
-            Some(TrieNode {
+            vec![TrieNode {
                 value: Some("Geo struct".to_owned()),
                 children: std::collections::HashMap::new()
-            })
+            }]
         );
     }
 
     #[test]
     fn trie_chunk_vec_test() {
         let mut trie = TrieNode::new();
-        trie.add(
-            ["Paris", "Paris 15", "15ème arrondissement"],
-            "Geo struct".to_owned(),
-        );
+        let alternatives_paris = vec!["Paris", "Paris 15", "15ème arrondissement"];
+        trie.add(&alternatives_paris, "paris geostruct".to_owned());
+        let alternatives = vec!["Paradise Nevada"];
+        trie.add(&alternatives, "Nevada geostruct".to_owned());
         assert_eq!(
             trie.get_where(|inputs| inputs.iter().any(|input| chunk(&input, "Par"))),
-            Some(TrieNode {
-                value: Some("Geo struct".to_owned()),
-                children: std::collections::HashMap::new()
-            })
+            vec![
+                TrieNode {
+                    value: Some("paris geostruct".to_owned()),
+                    children: std::collections::HashMap::new()
+                },
+                TrieNode {
+                    value: Some("Nevada geostruct".to_owned()),
+                    children: std::collections::HashMap::new()
+                }
+            ]
         );
         assert_eq!(
-            trie.get_where(|inputs| inputs.iter().any(|input| chunk(&input, "15"))),
-            Some(TrieNode {
-                value: Some("Geo struct".to_owned()),
+            trie.get_where(|inputs| inputs.iter().any(|input| chunk(&input, "Pari"))),
+            vec![TrieNode {
+                value: Some("paris geostruct".to_owned()),
                 children: std::collections::HashMap::new()
-            })
+            }]
+        );
+
+        assert_eq!(
+            trie.get_where(|inputs| inputs.iter().any(|input| chunk(&input, "15"))),
+            vec![TrieNode {
+                value: Some("paris geostruct".to_owned()),
+                children: std::collections::HashMap::new()
+            }]
         );
     }
 
@@ -146,10 +168,10 @@ mod tests {
         trie.add("users/:id", ["whatever"]);
         assert_eq!(
             trie.get_where(|x| x.contains(":")),
-            Some(TrieNode {
+            vec![TrieNode {
                 value: Some(["whatever"]),
                 children: std::collections::HashMap::new()
-            })
+            }]
         );
     }
 }
