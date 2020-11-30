@@ -43,10 +43,10 @@ where
             None
         }
     }
-    fn contains_where(&self, test: Callback<K>) -> bool {
+    fn contains_where(&self, test: fn(key: K) -> bool) -> bool {
         self.children.keys().any(|&key| test(key))
     }
-    fn get_where(&self, test: Callback<K>) -> Option<TrieNode<K, V>> {
+    fn get_where(&self, test: fn(key: K) -> bool) -> Option<TrieNode<K, V>> {
         let iter = self.children.keys().find(|&&key| test(key));
         match iter {
             Some(result) => self.get(*result),
@@ -55,7 +55,6 @@ where
     }
 }
 
-type Callback<K> = fn(key: K) -> bool;
 
 fn chunk(input: &str) -> bool {
     let chars: Vec<char> = input.chars().collect();
